@@ -1,0 +1,1 @@
+# Quantower-MGC-4Trades-100Ticks-Each-1Lot-Algo
