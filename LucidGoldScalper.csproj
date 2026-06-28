@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <AssemblyName>LucidGoldScalper</AssemblyName>
+    <RootNamespace>LucidGoldScalper</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Output DLL directly to Quantower strategies folder (update path) -->
+    <OutputPath>$(LOCALAPPDATA)\Quantower\Scripts\Strategies\LucidGoldScalper\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 
+      Add references to Quantower DLLs.
+      Default install path: C:\Program Files\Quantower\Bin\
+      Right-click Reference → Add Reference → Browse
+    -->
+    <Reference Include="TradingPlatform.BusinessLayer">
+      <HintPath>C:\Program Files\Quantower\Bin\TradingPlatform.BusinessLayer.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>
