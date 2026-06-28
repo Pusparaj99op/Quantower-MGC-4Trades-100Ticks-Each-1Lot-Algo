@@ -1,5 +1,5 @@
 ---
-name: qunatowerandlucidskill
+name: quantowerandlucidskill
 description: this skill has knowledge about Quantower and Lucid Trading, including their APIs, SDKs, and trading rules. It can assist with strategy development, risk management, and integration of trading systems.
 ---
 
@@ -266,8 +266,8 @@ Platform Load DLL
 Fires when a new bar closes on any subscribed symbol/timeframe.
 
 ```csharp
-protected override void OnNewBar(string symbol, Period period, DateTime time, 
-                                  double open, double high, double low, 
+protected override void OnNewBar(string symbol, Period period, DateTime time,
+                                  double open, double high, double low,
                                   double close, long volume)
 {
     // This fires on bar close — good for higher timeframe analysis
@@ -280,8 +280,8 @@ protected override void OnNewBar(string symbol, Period period, DateTime time,
 Fires on every exchange trade print — the most granular market data event.
 
 ```csharp
-protected override void OnNewTrade(string symbol, DateTime time, 
-                                    double price, long size, 
+protected override void OnNewTrade(string symbol, DateTime time,
+                                    double price, long size,
                                     AggressorFlag aggressor)
 {
     // aggressor: Buy = buyer initiated, Sell = seller initiated
@@ -308,7 +308,7 @@ protected override void OnNewLevel2(string symbol, Level2Quote quote)
 Fires on every bid/ask change — best bid and best offer update.
 
 ```csharp
-protected override void OnNewQuote(string symbol, double bid, 
+protected override void OnNewQuote(string symbol, double bid,
                                     double ask, DateTime time)
 {
     // Use this for spread monitoring and mid-price calculations
@@ -374,12 +374,12 @@ Always handle all terminal states in `OnOrderChanged`. Never assume an order is 
 protected override void OnPositionChanged(Position position)
 {
     if (position.Symbol.Name != _primarySymbol) return;
-    
+
     _currentPosition = position;
-    _currentQty = position.Quantity;         // Positive = long, Negative = short  
+    _currentQty = position.Quantity;         // Positive = long, Negative = short
     _unrealizedPnL = position.GrossPnl;
     _averageEntryPrice = position.AveragePrice;
-    
+
     // Trigger risk checks on every position change
     CheckRiskLimits();
 }
@@ -431,12 +431,12 @@ foreach (var bar in history)
 // Use structured logging at appropriate levels
 Log($"[ENTRY] Signal confirmed. Symbol={symbol}, Side={side}, Qty={qty}, " +
     $"Entry={entryPrice:F1}, SL={stopPrice:F1}, TP={targetPrice:F1}, " +
-    $"RR={rr:F2}, DailyRiskUsed={dailyRiskPct:P1}", 
+    $"RR={rr:F2}, DailyRiskUsed={dailyRiskPct:P1}",
     StrategyLoggingLevel.Trading);
 
 Log($"[RISK] Daily loss limit approaching. " +
     $"Current={currentDailyLoss:C2}, Limit={dailyLossLimit:C2}, " +
-    $"Remaining={remaining:C2}", 
+    $"Remaining={remaining:C2}",
     StrategyLoggingLevel.Error);
 
 // Never log in tick-level hot paths — use a sampling approach
@@ -638,14 +638,14 @@ Trailing DD Start: $23,500 (=$25,000 - $1,500 drawdown limit)
 
 Day 1: Account grows to $26,000
   → Trailing DD floor rises to $24,500 (=$26,000 - $1,500)
-  
-Day 2: Account grows to $27,000  
+
+Day 2: Account grows to $27,000
   → Trailing DD floor rises to $25,500 (=$27,000 - $1,500)
-  
+
 Day 3: Account drops back to $25,700
   → Trailing DD floor STAYS at $25,500 (it only moves up, never down)
   → Available drawdown buffer: $25,700 - $25,500 = $200 ← DANGER
-  
+
 If account touches $25,500 → IMMEDIATE AUTO-LIQUIDATION
 ```
 
@@ -741,39 +741,39 @@ public class AccountDetectionEngine
     private Account _lucidAccount;
     private LucidAccountProfile _profile;
     private LucidRuleSet _ruleSet;
-    
+
     public void Initialize()
     {
         // Step 1: Find Lucid account
         _lucidAccount = DiscoverLucidAccount();
-        
+
         // Step 2: Parse account metadata
         _profile = ParseAccountProfile(_lucidAccount);
-        
+
         // Step 3: Load matching rule set
         _ruleSet = RuleSetFactory.Create(_profile);
-        
+
         // Step 4: Subscribe to account changes
         _lucidAccount.PropertyChanged += OnAccountPropertyChanged;
     }
-    
+
     private Account DiscoverLucidAccount()
     {
         // Try name-based detection first
         var account = Core.Instance.Accounts
-            .FirstOrDefault(a => 
+            .FirstOrDefault(a =>
                 a.Name.Contains("Lucid", StringComparison.OrdinalIgnoreCase) ||
                 a.Name.Contains("FLEX", StringComparison.OrdinalIgnoreCase));
-        
+
         // If not found by name, prompt user or use configured filter
         if (account == null)
             account = Core.Instance.Accounts
                 .FirstOrDefault(a => a.Name == _configuredAccountName);
-                
+
         if (account == null)
             throw new InvalidOperationException(
                 "No Lucid account detected. Verify connection and account name filter.");
-        
+
         return account;
     }
 }
@@ -821,11 +821,11 @@ private decimal DetectAccountSize(Account account)
         { "100K", 100000m }, { "100k", 100000m },
         { "150K", 150000m }, { "250K", 250000m }
     };
-    
+
     foreach (var pattern in namePatterns)
         if (account.Name.Contains(pattern.Key))
             return pattern.Value;
-    
+
     // Method 2: Infer from initial balance
     decimal balance = account.Balance;
     return balance switch
@@ -851,7 +851,7 @@ public static class RuleSetFactory
         // ⚠️ CRITICAL: These values must be loaded from a verified
         // external configuration file that is updated whenever
         // Lucid Trading changes their rules. NEVER hardcode.
-        
+
         return profile.AccountSize switch
         {
             25000m => new LucidRuleSet
@@ -880,7 +880,7 @@ public class RuleComplianceMonitor
     public RuleStatus CheckAllRules(LucidAccountProfile profile)
     {
         var status = new RuleStatus { IsCompliant = true };
-        
+
         // Check 1: Trailing drawdown floor
         if (profile.CurrentEquity <= profile.TrailingDDFloor)
         {
@@ -889,7 +889,7 @@ public class RuleComplianceMonitor
             status.Action = ComplianceAction.EmergencyLiquidate;
             return status;
         }
-        
+
         // Check 2: Emergency buffer (pre-violation warning)
         decimal ddBuffer = profile.CurrentEquity - profile.TrailingDDFloor;
         if (ddBuffer < _rules.EmergencyBufferThreshold)
@@ -902,16 +902,16 @@ public class RuleComplianceMonitor
             status.WarningLevel = WarningLevel.Critical;
             status.Action = ComplianceAction.NoNewTrades;
         }
-        
+
         // Check 3: Daily loss limit
-        if (_rules.HasDailyLossLimit && 
+        if (_rules.HasDailyLossLimit &&
             profile.DailyPnL < -_rules.DailyLossLimit)
         {
             status.IsCompliant = false;
             status.ViolationType = ViolationType.DailyLossExceeded;
             status.Action = ComplianceAction.SuspendTradingToday;
         }
-        
+
         // Check 4: Consistency cap
         if (_rules.HasConsistencyRule)
         {
@@ -922,13 +922,13 @@ public class RuleComplianceMonitor
                 status.Action = ComplianceAction.NoNewTrades;
             }
         }
-        
+
         // Check 5: News event
         if (_newsCalendar.IsNewsWindowActive())
         {
             status.Action = ComplianceAction.FlattenAndPause;
         }
-        
+
         return status;
     }
 }
@@ -964,8 +964,8 @@ All futures instruments traded on CME/COMEX use the **Globex** electronic tradin
 | Trading Unit | 1 contract = 10 oz of gold |
 | Price Quote | USD per troy ounce (e.g., 2,350.0) |
 
-**Price calculation:**  
-If MGC is at $2,350.0 and moves to $2,351.0:  
+**Price calculation:**
+If MGC is at $2,350.0 and moves to $2,351.0:
 Change = $1.00 = 10 ticks × $1.00/tick = **$10.00 profit per contract**
 
 ### 6.3 GC — Standard Gold Futures
@@ -1120,13 +1120,13 @@ Higher Low (HL) ─── ●        ╲   ╱
                                ● (Previous LL becoming HL = structure shift)
 ```
 
-**BOS (Break of Structure):**  
+**BOS (Break of Structure):**
 Price closes beyond a previous swing high (bullish BOS) or swing low (bearish BOS) in the direction of the existing trend. Confirms trend continuation.
 
-**CHoCH (Change of Character):**  
+**CHoCH (Change of Character):**
 Price closes beyond a previous swing in the counter-trend direction for the first time. Signals potential reversal. Weaker than MSS.
 
-**MSS (Market Structure Shift):**  
+**MSS (Market Structure Shift):**
 Similar to CHoCH but typically requires a displacement candle (strong impulsive move) breaking the previous structure point. More significant than CHoCH. The MSS is the first objective signal that a new trend may be forming.
 
 ### 8.3 Premium and Discount
@@ -1215,12 +1215,12 @@ Every major session or time period exhibits three phases:
 A — Accumulation (Asian session / early session)
      → Smart money builds position quietly
      → Tight range, low volatility
-     
-M — Manipulation (London open / session open)  
+
+M — Manipulation (London open / session open)
      → False move opposite to true direction
      → Retail traders enter wrong direction
      → Stops of "smart" retail are swept
-     
+
 D — Distribution (NY session / main session)
      → True directional move begins
      → Retail caught wrong direction
@@ -1243,7 +1243,7 @@ Example: Bearish Judas Swing (NY Open)
 
 A specific ICT time-based trade model:
 - **Window 1:** 3:00 AM – 4:00 AM ET (London)
-- **Window 2:** 10:00 AM – 11:00 AM ET (New York)  
+- **Window 2:** 10:00 AM – 11:00 AM ET (New York)
 - **Window 3:** 2:00 PM – 3:00 PM ET (Afternoon)
 
 Within each window, look for:
@@ -1273,17 +1273,17 @@ Phase A: Stopping the downtrend
   → Price makes a selling climax (SC) — big move down, huge volume
   → Automatic rally (AR) — sharp bounce
   → Secondary test (ST) — retest of lows with less volume
-  
+
 Phase B: Building a cause
   → Wide, choppy range
   → Multiple tests of resistance and support
   → Smart money accumulating at lower prices
-  
+
 Phase C: Spring / Shakeout
   → Final liquidity sweep below the range
   → Equal lows swept, sell stops harvested
   → True reversal begins here
-  
+
 Phase D: Markup begins
   → Upward break of trading range resistance
   → Signs of Strength (SOS)
@@ -1414,7 +1414,7 @@ Negative Delta: More selling aggression than buying aggression
 CRITICAL: Delta does NOT predict direction with certainty!
   - Market can rise with negative delta (passive buyers absorbing aggressive sellers)
   - Market can fall with positive delta (passive sellers absorbing aggressive buyers)
-  
+
 Delta is CONTEXT-DEPENDENT. Always combine with price action.
 ```
 
@@ -1424,7 +1424,7 @@ Delta is CONTEXT-DEPENDENT. Always combine with price action.
 Bullish Divergence: Price makes lower low, CD makes higher low
   → Sellers are exhausting. Reversal likely.
 
-Bearish Divergence: Price makes higher high, CD makes lower high  
+Bearish Divergence: Price makes higher high, CD makes lower high
   → Buyers are exhausting. Reversal likely.
 
 Trend Confirmation: Price makes higher highs AND CD makes higher highs
@@ -1583,33 +1583,33 @@ flowchart TD
 public class HTFBiasEngine
 {
     private readonly List<Symbol> _symbols;
-    
+
     public MarketBias GetBias(string symbol)
     {
         // 1. Daily chart structure
         var dailyStructure = AnalyzeMarketStructure(symbol, Period.DAY1);
-        
+
         // 2. 4-Hour chart structure
         var h4Structure = AnalyzeMarketStructure(symbol, Period.HOUR4);
-        
+
         // 3. DXY correlation check
         var dxyBias = GetDXYBias(); // Inverse of gold bias
-        
+
         // 4. Determine confluence
-        if (dailyStructure == Trend.Bullish && 
-            h4Structure == Trend.Bullish && 
+        if (dailyStructure == Trend.Bullish &&
+            h4Structure == Trend.Bullish &&
             dxyBias == Trend.Bearish)
             return MarketBias.StrongBullish;
-        
-        if (dailyStructure == Trend.Bearish && 
-            h4Structure == Trend.Bearish && 
+
+        if (dailyStructure == Trend.Bearish &&
+            h4Structure == Trend.Bearish &&
             dxyBias == Trend.Bullish)
             return MarketBias.StrongBearish;
-        
+
         // Conflicting timeframes — no trade
         return MarketBias.Neutral;
     }
-    
+
     private Trend AnalyzeMarketStructure(string symbol, Period period)
     {
         // Check last 3 swing points
@@ -1649,35 +1649,35 @@ public class SignalScorer
     public float ScoreSetup(SetupContext ctx)
     {
         float score = 0f;
-        
+
         // HTF Bias (25% weight)
-        score += ctx.HTFBias == MarketBias.StrongBullish ? 25f : 
+        score += ctx.HTFBias == MarketBias.StrongBullish ? 25f :
                  ctx.HTFBias == MarketBias.Bullish ? 15f : 0f;
-        
-        // Kill Zone (10% weight)  
+
+        // Kill Zone (10% weight)
         score += ctx.IsKillZoneActive ? 10f : 0f;
-        
+
         // Liquidity Sweep Quality (20% weight)
         score += ctx.SweepDepth > 5 ? 20f :    // Deep sweep
                  ctx.SweepDepth > 2 ? 12f : 5f; // Shallow sweep
-        
+
         // Order Block Quality (15% weight)
         score += ctx.OrderBlockAge < 3 ? 15f :  // Fresh OB
                  ctx.OrderBlockAge < 10 ? 8f : 3f;
-        
+
         // FVG Presence (10% weight)
         score += ctx.FVGPresent ? 10f : 0f;
-        
+
         // Footprint Confirmation (10% weight)
         score += ctx.DeltaFlip && ctx.StackedImbalance ? 10f :
                  ctx.DeltaFlip ? 6f : 0f;
-        
+
         // DOM Confirmation (5% weight)
         score += ctx.DOMAbsorption ? 5f : 0f;
-        
+
         // Volatility Context (5% weight)
         score += ctx.ATR_Within_Normal_Range ? 5f : 0f;
-        
+
         return score; // Enter if score >= 65
     }
 }
@@ -1739,7 +1739,7 @@ public int CalculatePositionSize(
 {
     decimal riskDollars = accountEquity * riskPercentage;
     decimal riskPerContract = stopLossTicks * tickValue;
-    
+
     int rawContracts = (int)Math.Floor(riskDollars / riskPerContract);
     return Math.Min(rawContracts, maxContracts);
 }
@@ -1767,7 +1767,7 @@ public int CalculateATRSizedPosition(
     double stopInPriceUnits = currentATR * atrMultiplier;
     int stopTicks = (int)Math.Round(stopInPriceUnits / (double)tickSize);
     decimal riskPerContract = stopTicks * tickValue;
-    
+
     int contracts = (int)Math.Floor(targetRiskDollars / riskPerContract);
     return Math.Min(Math.Max(1, contracts), maxContracts);
 }
@@ -1783,26 +1783,26 @@ public class DailyRiskBudget
     private decimal _dailyLossAccumulated;
     private int _tradeCount;
     private int _consecutiveLosses;
-    
-    public bool CanTrade => 
-        _dailyLossAccumulated > -_softDailyLimit && 
+
+    public bool CanTrade =>
+        _dailyLossAccumulated > -_softDailyLimit &&
         _consecutiveLosses < 3 &&
         _tradeCount < _maxDailyTrades;
-    
-    public decimal RemainingRiskBudget => 
+
+    public decimal RemainingRiskBudget =>
         _softDailyLimit - Math.Abs(_dailyLossAccumulated);
-    
+
     public void RecordTrade(decimal pnl)
     {
         _dailyLossAccumulated += pnl;
         _tradeCount++;
-        
+
         if (pnl < 0)
             _consecutiveLosses++;
         else
             _consecutiveLosses = 0; // Reset on win
     }
-    
+
     public void ResetForNewSession()
     {
         _dailyLossAccumulated = 0m;
@@ -1827,7 +1827,7 @@ public enum CircuitBreakerState
 public class CircuitBreaker
 {
     private CircuitBreakerState _state = CircuitBreakerState.Normal;
-    
+
     public void EvaluateState(RiskMetrics metrics)
     {
         var newState = metrics switch
@@ -1840,7 +1840,7 @@ public class CircuitBreaker
             { DailyLossPct: > 0.4m } => CircuitBreakerState.Reduced,
             _ => CircuitBreakerState.Normal
         };
-        
+
         // Circuit breakers only escalate intraday — never de-escalate automatically
         // De-escalation requires new session start
         if (newState > _state)
@@ -1849,7 +1849,7 @@ public class CircuitBreaker
             LogCircuitBreakerChange(newState, metrics);
         }
     }
-    
+
     public decimal GetSizingMultiplier() => _state switch
     {
         CircuitBreakerState.Normal => 1.0m,
@@ -1867,7 +1867,7 @@ Track the maximum adverse excursion (worst intraday drawdown) for each trade. Ov
 public class MAETracker
 {
     private readonly List<TradeMAE> _history = new();
-    
+
     public record TradeMAE(
         decimal EntryPrice,
         decimal MaxAdverseExcursion,  // worst drawdown in ticks
@@ -1875,7 +1875,7 @@ public class MAETracker
         decimal FinalPnL,
         SetupType Setup
     );
-    
+
     // After enough trades, compute:
     // P90 MAE for winning trades = maximum stop needed to capture wins
     // P10 MAE for losing trades = where to cut losses quickly
@@ -1884,7 +1884,7 @@ public class MAETracker
         var setupTrades = _history.Where(t => t.Setup == setup).ToList();
         var winners = setupTrades.Where(t => t.FinalPnL > 0).ToList();
         var losers = setupTrades.Where(t => t.FinalPnL <= 0).ToList();
-        
+
         return new MAEStats
         {
             WinnerP90MAE = Percentile(winners.Select(t => t.MaxAdverseExcursion), 0.90),
@@ -1949,25 +1949,25 @@ public class BreakevenManager
     private readonly decimal _breakevenTriggerTicks; // e.g., 8 ticks profit
     private readonly decimal _breakevenOffsetTicks;  // e.g., 1 tick above entry
     private bool _breakevenSet = false;
-    
+
     public void CheckAndMoveToBreakeven(Position position, Order stopLossOrder)
     {
         if (_breakevenSet) return;
-        
+
         decimal entryPrice = position.AveragePrice;
         decimal currentPrice = position.CurrentPrice;
         decimal tickSize = 0.1m; // MGC
-        
+
         decimal profitInTicks = position.Side == PositionSide.Long
             ? (currentPrice - entryPrice) / tickSize
             : (entryPrice - currentPrice) / tickSize;
-        
+
         if (profitInTicks >= _breakevenTriggerTicks)
         {
             decimal newStop = position.Side == PositionSide.Long
                 ? entryPrice + (_breakevenOffsetTicks * tickSize)
                 : entryPrice - (_breakevenOffsetTicks * tickSize);
-            
+
             Core.Instance.ModifyOrder(stopLossOrder, newStop);
             _breakevenSet = true;
             Log($"[MGMT] Breakeven set at {newStop:F1}", StrategyLoggingLevel.Trading);
@@ -1984,12 +1984,12 @@ public class ATRTrailingStop
     private double _currentATR;
     private double _atrMultiplier;
     private decimal _trailingStopPrice;
-    
+
     public decimal UpdateTrailingStop(Position position, double currentATR)
     {
         _currentATR = currentATR;
         decimal trailAmount = (decimal)(currentATR * _atrMultiplier);
-        
+
         if (position.Side == PositionSide.Long)
         {
             decimal candidateStop = position.CurrentPrice - trailAmount;
@@ -2002,7 +2002,7 @@ public class ATRTrailingStop
             // Trail stop only moves DOWN for short positions
             _trailingStopPrice = Math.Min(_trailingStopPrice, candidateStop);
         }
-        
+
         return _trailingStopPrice;
     }
 }
@@ -2013,37 +2013,37 @@ public class ATRTrailingStop
 ```csharp
 public async Task EmergencyLiquidateAll(string reason)
 {
-    Log($"[EMERGENCY] Initiating emergency liquidation. Reason: {reason}", 
+    Log($"[EMERGENCY] Initiating emergency liquidation. Reason: {reason}",
         StrategyLoggingLevel.Error);
-    
+
     // 1. Cancel all working orders
     var workingOrders = Core.Instance.Orders
         .Where(o => o.Account == _account && o.Status == OrderStatus.Working)
         .ToList();
-    
+
     foreach (var order in workingOrders)
     {
         Core.Instance.CancelOrder(order);
         Log($"[EMERGENCY] Cancelled order {order.Id}", StrategyLoggingLevel.Error);
     }
-    
+
     // 2. Close all positions at market
     var positions = Core.Instance.Positions
         .Where(p => p.Account == _account && Math.Abs(p.Quantity) > 0)
         .ToList();
-    
+
     foreach (var position in positions)
     {
         Core.Instance.ClosePosition(position);
         Log($"[EMERGENCY] Closing position {position.Symbol.Name} " +
             $"Qty={position.Quantity}", StrategyLoggingLevel.Error);
     }
-    
+
     // 3. Disable the strategy
     _state = TradingState.Emergency;
     _isDisabled = true;
-    
-    Log($"[EMERGENCY] Liquidation complete. Strategy disabled.", 
+
+    Log($"[EMERGENCY] Liquidation complete. Strategy disabled.",
         StrategyLoggingLevel.Error);
 }
 ```
@@ -2056,23 +2056,23 @@ public class NewsEventManager
     private readonly EconomicCalendar _calendar;
     private readonly int _minutesBefore;  // Flatten X minutes before news
     private readonly int _minutesAfter;   // Resume X minutes after news
-    
+
     public bool ShouldFlattenForNews()
     {
         var nextEvent = _calendar.GetNextHighImpactEvent(DateTime.UtcNow);
-        
+
         if (nextEvent == null) return false;
-        
+
         var timeToEvent = nextEvent.ScheduledTime - DateTime.UtcNow;
         return timeToEvent.TotalMinutes <= _minutesBefore;
     }
-    
+
     public bool IsSafeToResumeTradingAfterNews()
     {
         var lastEvent = _calendar.GetLastHighImpactEvent(DateTime.UtcNow);
-        
+
         if (lastEvent == null) return true;
-        
+
         var timeSinceEvent = DateTime.UtcNow - lastEvent.ScheduledTime;
         return timeSinceEvent.TotalMinutes >= _minutesAfter;
     }
@@ -2096,7 +2096,7 @@ In a high-frequency event handler (OnNewTrade fires thousands of times per day),
 
 ```csharp
 // ❌ BAD: Allocates on every tick
-protected override void OnNewTrade(string symbol, DateTime time, 
+protected override void OnNewTrade(string symbol, DateTime time,
     double price, long size, AggressorFlag aggressor)
 {
     var trade = new TradeData { Price = price, Size = size, Aggressor = aggressor };
@@ -2116,7 +2116,7 @@ private readonly struct TradeData
 private readonly TradeData[] _tradeBuffer = new TradeData[1000]; // Fixed allocation
 private int _tradeHead = 0;
 
-protected override void OnNewTrade(string symbol, DateTime time, 
+protected override void OnNewTrade(string symbol, DateTime time,
     double price, long size, AggressorFlag aggressor)
 {
     _tradeBuffer[_tradeHead % 1000] = new TradeData(price, size, aggressor == AggressorFlag.Buy);
@@ -2133,7 +2133,7 @@ public class CachedIndicator<T>
     private DateTime _lastComputed;
     private readonly TimeSpan _maxAge;
     private readonly Func<T> _computeFn;
-    
+
     public T Value
     {
         get
@@ -2161,24 +2161,24 @@ public class FastVolumeProfile
     private readonly decimal _minPrice;
     private readonly decimal _tickSize;
     private volatile int _pocIndex = 0;
-    
+
     private int PriceToIndex(decimal price) =>
         (int)Math.Round((price - _minPrice) / _tickSize);
-    
+
     public void AddTrade(decimal price, long size, bool isBuy)
     {
         int idx = PriceToIndex(price);
         if (idx < 0 || idx >= _volume.Length) return;
-        
+
         Interlocked.Add(ref _volume[idx], size);
         if (isBuy) Interlocked.Add(ref _buyVolume[idx], size);
         else Interlocked.Add(ref _sellVolume[idx], size);
-        
+
         // Atomic POC update
         if (_volume[idx] > _volume[_pocIndex])
             Interlocked.Exchange(ref _pocIndex, idx);
     }
-    
+
     public decimal POC => _minPrice + (_pocIndex * _tickSize);
 }
 ```
@@ -2190,7 +2190,7 @@ public class LatencyMonitor
 {
     private readonly Stopwatch _sw = new();
     private readonly Queue<long> _samples = new(1000);
-    
+
     public IDisposable Measure(string operation)
     {
         _sw.Restart();
@@ -2200,13 +2200,13 @@ public class LatencyMonitor
             long us = _sw.ElapsedTicks * 1_000_000 / Stopwatch.Frequency;
             _samples.Enqueue(us);
             if (_samples.Count > 1000) _samples.Dequeue();
-            
+
             if (us > 1000) // Alert if >1ms
-                Log($"[PERF] {operation} took {us}μs — investigate!", 
+                Log($"[PERF] {operation} took {us}μs — investigate!",
                     StrategyLoggingLevel.Error);
         });
     }
-    
+
     public double P99Latency => Percentile(_samples, 0.99);
 }
 ```
@@ -2352,7 +2352,7 @@ public enum MarketRegime
 public class RegimeClassifier
 {
     // Feature vector computed from recent market data
-    private float[] ComputeFeatures(BarData[] recentBars, 
+    private float[] ComputeFeatures(BarData[] recentBars,
                                      VolumeProfileData profile,
                                      OrderFlowData flow)
     {
@@ -2365,13 +2365,13 @@ public class RegimeClassifier
             (float)recentBars.Count(b => b.Close > b.Open) / recentBars.Length, // Bull candle ratio
         };
     }
-    
+
     // Simple rule-based regime detection (no ML required for initial version)
     public MarketRegime Classify(float[] features)
     {
         float adx = features[0];
         float volRatio = features[1];
-        
+
         if (adx > 25 && volRatio > 1.2f) return MarketRegime.TrendingBullish;  // simplified
         if (adx < 20 && volRatio < 0.8f) return MarketRegime.RangingNarrow;
         if (volRatio > 2.0f) return MarketRegime.HighVolatility;
@@ -2390,23 +2390,23 @@ public class TradeJournalAnalyzer
     public async Task<string> AnalyzeSession(List<TradeRecord> trades)
     {
         var sessionSummary = BuildSessionSummary(trades);
-        
+
         var prompt = $"""
             You are a quantitative trading analyst reviewing a scalping session on MGC (Micro Gold Futures).
-            
+
             Session Summary:
             {sessionSummary}
-            
+
             Analyze:
             1. Entry timing quality (was the kill zone respected?)
             2. Stop placement (were stops logical vs. structure?)
             3. Trade management (were breakevens and partials executed correctly?)
             4. Rule violations (any deviation from the strategy rules?)
             5. Areas for improvement
-            
+
             Be specific and cite trade timestamps. Focus on process quality, not just outcomes.
             """;
-        
+
         // Call Claude API or OpenAI API
         return await _llmClient.CompleteAsync(prompt);
     }
@@ -2424,23 +2424,23 @@ public class NewsImpactFilter
         { "geopolitical risk", 3 }, { "safe haven", 3 }, { "inflation", 2 },
         { "Fed dovish", 3 }, { "rate cut", 3 }, { "dollar weakness", 2 }
     };
-    
+
     private static readonly Dictionary<string, int> BearishKeywords = new()
     {
         { "rate hike", 3 }, { "Fed hawkish", 3 }, { "dollar strength", 2 },
         { "risk on", 2 }, { "strong GDP", 2 }, { "disinflation", 2 }
     };
-    
+
     public SentimentScore ScoreNewsHeadline(string headline)
     {
         int bullScore = BullishKeywords
             .Where(kv => headline.Contains(kv.Key, StringComparison.OrdinalIgnoreCase))
             .Sum(kv => kv.Value);
-        
+
         int bearScore = BearishKeywords
             .Where(kv => headline.Contains(kv.Key, StringComparison.OrdinalIgnoreCase))
             .Sum(kv => kv.Value);
-        
+
         return new SentimentScore(bullScore, bearScore);
     }
 }
@@ -2500,7 +2500,7 @@ public class StrategyCore
     private readonly IRiskEngine _risk;
     private readonly ISignalDetector _signals;
     private readonly IOrderPlacer _orders;
-    
+
     public StrategyCore(IRiskEngine risk, ISignalDetector signals, IOrderPlacer orders)
     {
         _risk = risk;
@@ -2516,7 +2516,7 @@ public class StrategyCore
 public abstract class TradingState
 {
     protected readonly TradingContext _ctx;
-    
+
     public abstract Task<TradingState> HandleTick(TickData tick);
     public abstract Task<TradingState> HandleOrderChanged(Order order);
     public abstract Task<TradingState> HandleRiskAlert(RiskAlert alert);
@@ -2529,15 +2529,15 @@ public class WaitingForSetupState : TradingState
     {
         // Check kill zone
         if (!_ctx.KillZoneActive) return this;
-        
+
         // Check for signal
         var signal = await _ctx.SignalDetector.DetectAsync(tick);
         if (signal == null) return this;
-        
+
         // Validate risk
         var proposal = new TradeProposal(signal);
         if (!_ctx.RiskEngine.IsAcceptable(proposal)) return this;
-        
+
         // Transition to entering
         return new EnteringTradeState(_ctx, proposal);
     }
@@ -2550,12 +2550,12 @@ public class WaitingForSetupState : TradingState
 public class TradingEventBus
 {
     private readonly ConcurrentDictionary<Type, List<Delegate>> _handlers = new();
-    
+
     public void Subscribe<T>(Action<T> handler)
     {
         _handlers.GetOrAdd(typeof(T), _ => new List<Delegate>()).Add(handler);
     }
-    
+
     public void Publish<T>(T @event)
     {
         if (_handlers.TryGetValue(typeof(T), out var handlers))
@@ -2632,7 +2632,7 @@ public void TrailingDDFloor_UpdatesCorrectly_WhenEquityRises()
     var monitor = new DrawdownMonitor(initialBalance: 25000m, ddLimit: 1500m);
     monitor.UpdateEquity(26000m);  // New high
     Assert.AreEqual(24500m, monitor.TrailingDDFloor);
-    
+
     monitor.UpdateEquity(25500m);  // Drops below new high but above floor
     Assert.AreEqual(24500m, monitor.TrailingDDFloor);  // Floor unchanged
 }
@@ -2655,7 +2655,7 @@ public void PositionSizer_RespectsMaxContracts()
 ```mermaid
 stateDiagram-v2
     [*] --> Initializing
-    
+
     Initializing --> Disconnected : Platform loaded
     Disconnected --> Connecting : Connection initiated
     Connecting --> Connected : Connection established
@@ -2707,19 +2707,19 @@ public class TradingStateMachine
     private TradingStateEnum _currentState = TradingStateEnum.Initializing;
     private readonly Dictionary<TradingStateEnum, ITradingState> _states;
     private readonly TradingEventBus _bus;
-    
+
     public void Transition(TradingStateEnum newState, string reason = "")
     {
         var oldState = _currentState;
         _currentState = newState;
-        
-        Log($"[STATE] {oldState} → {newState}" + 
+
+        Log($"[STATE] {oldState} → {newState}" +
             (string.IsNullOrEmpty(reason) ? "" : $" ({reason})"));
-        
+
         _bus.Publish(new StateChangedEvent(oldState, newState, reason));
         _states[newState].OnEnter();
     }
-    
+
     public void Process(MarketEvent evt)
     {
         // Validate transition is legal
@@ -2977,7 +2977,7 @@ SYSTEM VERIFICATION
 □ Kill zone times verified for current ET/CDT offset
 □ Emergency liquidation tested in paper trading environment
 
-RISK SYSTEM VERIFICATION  
+RISK SYSTEM VERIFICATION
 □ Circuit breaker activates at configured thresholds (test with mock account data)
 □ Emergency stop closes all positions and cancels all orders
 □ Stop loss orders verified to be placed before or simultaneous with entry
